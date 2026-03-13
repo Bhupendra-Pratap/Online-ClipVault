@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Clipvault — Secure Clipboard Sharing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- HEADER -->
+  <header>
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-icon">⌘</div>
+        <div class="logo-text">Clip<span>vault</span></div>
+      </div>
+      <nav class="header-nav">
+        <button class="nav-btn active" data-tab="save" onclick="switchTab('save')">Save Clip</button>
+        <button class="nav-btn" data-tab="retrieve" onclick="switchTab('retrieve')">Retrieve</button>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ── SAVE TAB ─────────────────────────────────────────────────── -->
+    <section class="tab-section active" id="tab-save">
+
+      <div class="section-header">
+        <h1 class="section-title">Save a Clip</h1>
+        <p class="section-sub">Paste your content and get a 4-digit code to share it.</p>
+      </div>
+
+      <div class="composer" id="composer">
+        <div class="composer-top">
+          <input class="title-input" id="title-input" type="text" placeholder="Title (optional)" maxlength="80" autocomplete="off" />
+          <div class="composer-selects">
+            <div class="select-wrap">
+              <label class="select-label">TYPE</label>
+              <select class="styled-select" id="tag-select">
+                <option value="general">General</option>
+                <option value="code">Code</option>
+                <option value="link">Link</option>
+                <option value="note">Note</option>
+              </select>
+            </div>
+            <div class="select-wrap">
+              <label class="select-label">EXPIRES</label>
+              <select class="styled-select" id="ttl-select">
+                <option value="2h" selected>2 hours</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <textarea class="content-textarea" id="content-input"
+          placeholder="Paste or type anything — text, code, links, notes...&#10;&#10;Press Ctrl+Enter to save."
+          rows="8"></textarea>
+
+        <div class="composer-footer">
+          <span class="char-count" id="char-count">0 / 50,000</span>
+          <button class="btn-primary" id="save-btn" onclick="saveClip()">
+            <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v8M3 6l4 4 4-4M1 11h12" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Generate Code
+          </button>
+        </div>
+      </div>
+
+      <!-- Code result -->
+      <div class="code-result" id="code-result" style="display:none">
+        <div class="code-result-inner">
+          <div class="code-result-left">
+            <p class="result-label">YOUR ACCESS CODE</p>
+            <div class="code-digits" id="code-display">
+              <span>0</span><span>0</span><span>0</span><span>0</span>
+            </div>
+            <p class="result-hint" id="result-expiry"></p>
+          </div>
+          <div class="code-result-right">
+            <button class="btn-ghost" onclick="copyCode()">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 11V3a2 2 0 012-2h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Copy Code
+            </button>
+            <button class="btn-ghost" onclick="shareLink()">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><circle cx="12" cy="3" r="1.5" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="13" r="1.5" stroke="currentColor" stroke-width="1.5"/><circle cx="4" cy="8" r="1.5" stroke="currentColor" stroke-width="1.5"/><path d="M10.5 3.75l-5 3M10.5 12.25l-5-3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+              Share Link
+            </button>
+            <button class="btn-ghost danger" onclick="deleteCode()">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M1 3h12M5 3V2h4v1M11 3l-1 9H4L3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Delete
+            </button>
+          </div>
+        </div>
+        <button class="btn-new" onclick="resetComposer()">+ Save another clip</button>
+      </div>
+
+    </section>
+
+    <!-- ── RETRIEVE TAB ──────────────────────────────────────────────── -->
+    <section class="tab-section" id="tab-retrieve">
+
+      <div class="section-header">
+        <h1 class="section-title">Retrieve a Clip</h1>
+        <p class="section-sub">Enter the 4-digit code to access saved content.</p>
+      </div>
+
+      <div class="retrieve-box">
+        <div class="code-inputs-wrap">
+          <div class="code-inputs" id="code-inputs">
+            <input class="code-digit-input" id="d0" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" placeholder="—" />
+            <input class="code-digit-input" id="d1" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" placeholder="—" />
+            <input class="code-digit-input" id="d2" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" placeholder="—" />
+            <input class="code-digit-input" id="d3" type="text" inputmode="numeric" maxlength="1" pattern="[0-9]" placeholder="—" />
+          </div>
+          <p class="code-error" id="code-error"></p>
+        </div>
+        <button class="btn-primary" id="retrieve-btn" onclick="retrieveClip()">
+          <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 13V5M3 8l4-4 4 4M1 3h12" stroke="white" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Retrieve
+        </button>
+      </div>
+
+      <!-- Retrieved clip display -->
+      <div class="retrieved-card" id="retrieved-card" style="display:none">
+        <div class="retrieved-header">
+          <div class="retrieved-meta">
+            <span class="retrieved-title" id="ret-title"></span>
+            <span class="ret-tag-badge" id="ret-tag"></span>
+          </div>
+          <div class="retrieved-actions">
+            <button class="action-btn copy-btn" title="Copy content" onclick="copyRetrieved()">
+              <svg width="14" height="14" viewBox="0 0 16 16" fill="none"><rect x="5" y="5" width="9" height="9" rx="2" stroke="currentColor" stroke-width="1.5"/><path d="M3 11V3a2 2 0 012-2h6" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+            </button>
+            <button class="action-btn del-btn" title="Delete clip" onclick="deleteRetrieved()">
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none"><path d="M1 3h12M5 3V2h4v1M11 3l-1 9H4L3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+        </div>
+        <div class="retrieved-body" id="ret-content"></div>
+        <div class="retrieved-footer">
+          <div class="ret-stats">
+            <span id="ret-created"></span>
+            <span class="dot-sep">·</span>
+            <span id="ret-expires"></span>
+            <span class="dot-sep">·</span>
+            <span id="ret-views"></span>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Toast -->
+  <div class="toast" id="toast">
+    <div class="toast-dot"></div>
+    <span id="toast-msg">Done</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
