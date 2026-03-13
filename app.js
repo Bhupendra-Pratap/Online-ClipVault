@@ -3,6 +3,20 @@ let lastSavedCode = null;
 let lastRetrievedCode = null;
 let lastRetrievedContent = null;
 
+async function parseResponse(res) {
+  const text = await res.text();
+
+  if (!text) {
+    return {};
+  }
+
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { error: text.slice(0, 200) || `Request failed with status ${res.status}` };
+  }
+}
+
 /* ── Tab switching ───────────────────────────────────────────────────────────── */
 function switchTab(tab) {
   document.querySelectorAll('.tab-section').forEach(s => s.classList.remove('active'));
@@ -65,18 +79,17 @@ async function saveClip() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
-    const data = await res.json();
+    const data = await parseResponse(res);
 
     if (!res.ok) {
-      showToast(data.error || 'Failed to save.', 'error');
+      showToast(data.error || `Failed to save (${res.status}).`, 'error');
       return;
     }
 
     lastSavedCode = data.code;
     showCodeResult(data.code, data.expiresAt);
-
-  } catch (err) {
-    showToast('Network error. Is the server running?', 'error');
+  } catch {
+    showToast('Request failed. Check deployment logs.', 'error');
   } finally {
     btn.disabled = false;
     btn.innerHTML = `
@@ -255,10 +268,10 @@ async function retrieveClip() {
 
   try {
     const res = await fetch(`/api/clips/${code}`);
-    const data = await res.json();
+    const data = await parseResponse(res);
 
     if (!res.ok) {
-      showError(data.error || 'Not found.');
+      showError(data.error || `Not found (${res.status}).`);
       return;
     }
 
@@ -267,7 +280,7 @@ async function retrieveClip() {
     showRetrievedClip(data);
 
   } catch {
-    showError('Network error. Is the server running?');
+    showError('Request failed. Check deployment logs.');
   } finally {
     btn.disabled = false;
     btn.innerHTML = `

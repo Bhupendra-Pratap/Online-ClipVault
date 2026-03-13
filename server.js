@@ -4,14 +4,15 @@ const path = require('path');
 
 const app = express();
 const PORT = 3000;
-const DB_FILE = path.join(__dirname, 'data.json');
 const PUBLIC_DIR = path.join(__dirname, 'public');
 const INDEX_FILE = fs.existsSync(path.join(PUBLIC_DIR, 'index.html'))
   ? path.join(PUBLIC_DIR, 'index.html')
   : path.join(__dirname, 'index.html');
 const IS_SERVERLESS = process.env.VERCEL === '1';
+const DB_FILE = IS_SERVERLESS ? '/tmp/clipvault-data.json' : path.join(__dirname, 'data.json');
 const CLIP_TTL_MS = 2 * 60 * 60 * 1000;
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
+let memoryDB = {};
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(express.json());
@@ -25,15 +26,24 @@ app.get('/', (_req, res) => {
 // ─── Persistence Helpers ──────────────────────────────────────────────────────
 function loadDB() {
   try {
-    if (!fs.existsSync(DB_FILE)) return {};
-    return JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+    if (!fs.existsSync(DB_FILE)) return { ...memoryDB };
+    const parsed = JSON.parse(fs.readFileSync(DB_FILE, 'utf-8'));
+    memoryDB = parsed;
+    return parsed;
   } catch {
-    return {};
+    return { ...memoryDB };
   }
 }
 
 function saveDB(data) {
-  fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+  memoryDB = data;
+  try {
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+  } catch (error) {
+    if (!IS_SERVERLESS) {
+      throw error;
+    }
+  }
 }
 
 function getExpiresAt(clip) {
