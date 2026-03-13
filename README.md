@@ -10,8 +10,8 @@ A professional dark-themed clipboard sharing app with 4-digit access codes.
 - Tag types: General, Code, Link, Note
 - View count tracking
 - Shareable direct links (`?code=XXXX`)
-- Auto-cleanup of expired clips
-- Persistent storage via `data.json`
+- Automatic expiry via MongoDB TTL index
+- Persistent storage via MongoDB Atlas
 
 ## Setup & Run
 
@@ -20,12 +20,21 @@ A professional dark-themed clipboard sharing app with 4-digit access codes.
 npm install
 ```
 
-### 2. Start the server
+### 2. Configure environment variables
+```bash
+MONGODB_URI=mongodb+srv://<user>:<password>@<cluster-url>/?retryWrites=true&w=majority
+MONGODB_DB=clipvault
+MONGODB_COLLECTION=clips
+```
+
+For local development, put those values in a `.env` file in the project root. `example.env` is only a template and is not loaded automatically.
+
+### 3. Start the server
 ```bash
 npm start
 ```
 
-### 3. Open in browser
+### 4. Open in browser
 ```
 http://localhost:3000
 ```
@@ -36,13 +45,18 @@ npm run dev
 ```
 *(requires nodemon: `npm install -g nodemon`)*
 
+## Vercel Deployment
+
+Add the same `MONGODB_URI`, `MONGODB_DB`, and `MONGODB_COLLECTION` variables in your Vercel project settings before deploying.
+
 ## Project Structure
 
 ```
 clipvault/
 ├── server.js          ← Express API server
+├── lib/
+│   └── mongodb.js     ← MongoDB Atlas connection helper
 ├── package.json
-├── data.json          ← Created automatically on first save
 └── public/
     ├── index.html     ← App shell
     ├── style.css      ← All styles
