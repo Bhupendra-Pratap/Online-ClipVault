@@ -9,6 +9,7 @@ const PUBLIC_DIR = path.join(__dirname, 'public');
 const INDEX_FILE = fs.existsSync(path.join(PUBLIC_DIR, 'index.html'))
   ? path.join(PUBLIC_DIR, 'index.html')
   : path.join(__dirname, 'index.html');
+const IS_SERVERLESS = process.env.VERCEL === '1';
 const CLIP_TTL_MS = 2 * 60 * 60 * 1000;
 const CLEANUP_INTERVAL_MS = 5 * 60 * 1000;
 
@@ -179,10 +180,14 @@ function cleanupExpiredClips() {
   }
 }
 
-cleanupExpiredClips();
-setInterval(cleanupExpiredClips, CLEANUP_INTERVAL_MS);
+module.exports = app;
 
-// ─── Start ────────────────────────────────────────────────────────────────────
-app.listen(PORT, () => {
-  console.log(`\n  Clipvault server running at http://localhost:${PORT}\n`);
-});
+if (!IS_SERVERLESS) {
+  cleanupExpiredClips();
+  setInterval(cleanupExpiredClips, CLEANUP_INTERVAL_MS);
+
+  // ─── Start ──────────────────────────────────────────────────────────────────
+  app.listen(PORT, () => {
+    console.log(`\n  Clipvault server running at http://localhost:${PORT}\n`);
+  });
+}
